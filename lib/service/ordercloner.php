@@ -49,6 +49,22 @@ readonly class OrderCloner implements OrderClonerInterface
         }
         $clone->setBasket($basket);
 
+        $clonePropertyCollection = $clone->getPropertyCollection();
+
+        foreach ($order->getPropertyCollection() as $property) {
+
+            $clonePropertyCollection->getItemByOrderPropertyId($property->getPropertyId())
+                ?->setValue($property->getField('VALUE'));
+        }
+
+        $discountData = $order->getDiscount()->getApplyResult();
+
+        if (!empty($discountData) && isset($discountData['DISCOUNT_LIST'])) {
+            $cloneDiscount = $clone->getDiscount();
+            $cloneDiscount->setApplyResult($discountData);
+            $cloneDiscount->calculate();
+        }
+
         $cloneShipmentCollection = $clone->getShipmentCollection();
         $cloneShipment = $cloneShipmentCollection->createItem();
         $cloneShipment->setFields(
@@ -67,25 +83,9 @@ readonly class OrderCloner implements OrderClonerInterface
             array(
                 'PAY_SYSTEM_ID' => $paySysID,
                 'PAY_SYSTEM_NAME' => $paySysName,
+                'SUM' => $clone->getPrice(),
             )
         );
-
-
-        $clonePropertyCollection = $clone->getPropertyCollection();
-
-        foreach ($order->getPropertyCollection() as $property) {
-
-            $clonePropertyCollection->getItemByOrderPropertyId($property->getPropertyId())
-                ?->setValue($property->getField('VALUE'));
-        }
-
-        $discountData = $order->getDiscount()->getApplyResult();
-
-        if (!empty($discountData) && isset($discountData['DISCOUNT_LIST'])) {
-            $cloneDiscount = $clone->getDiscount();
-            $cloneDiscount->setApplyResult($discountData);
-            $cloneDiscount->calculate();
-        }
 
         return $clone;
     }
